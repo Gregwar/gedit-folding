@@ -64,7 +64,7 @@ class FoldingPyWindowHelper():
 			table=self.doc.get_tag_table()
 			self.fld=table.lookup('fld')
 			if self.fld==None:
-				self.fld=self.doc.create_tag('fld',foreground="#333333",paragraph_background="#aadc5c")
+				self.fld=self.doc.create_tag('fld',foreground="#EEEEEE",paragraph_background="#580758")
 			self.inv=table.lookup('inv')
 			if self.inv==None:
 				self.inv=self.doc.create_tag('inv',invisible=True)
