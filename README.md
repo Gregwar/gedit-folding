@@ -9,6 +9,8 @@ Installation
 - Move `folding.gedit-plugin` and `folding.py` into `~/.gnome2/gedit/plugins`
 - In Gedit, go to Edit &rarr; Preferences &rarr; Plugins to enable the plugin.
 
+Note: you can use `make install` to do this automatically
+
 Usage
 --------
 
@@ -16,4 +18,4 @@ Usage
 - `Alt-Z` on an indented block's top line will collapse that block
 - `Alt-Z` on a folded block will expand it 
 - `Alt-X` will expand all the collapsed blocks
-
+- `Alt-K` Fold/Unfold everything
