@@ -7,6 +7,7 @@ ui_str = """<ui>
 		<menu name="ToolsMenu" action="Tools">
 			<placeholder name="ToolsOps_2">
 				<menuitem name="Folding" action="FoldingPy"/>
+				<menuitem name="Folding All" action="FoldingPyAll"/>
 			</placeholder>
 		</menu>
 	</menubar>
@@ -18,6 +19,7 @@ class FoldingPyWindowHelper():
 		self._window = window
 		self._plugin = plugin
 		self._insert_menu()
+                self._fold_all = True
 		self.update_ui()
 
 	def deactivate(self):
@@ -35,6 +37,11 @@ class FoldingPyWindowHelper():
 					"FoldingPy", None, "Fold",
 					"<Alt>Z", "Fold",
 					self.fold
+				),
+				(
+					"FoldingPyAll", None, "Fold all",
+					"<Alt>K", "Fold all",
+					self.fold_all
 				)
 			],
 		)
@@ -68,18 +75,35 @@ class FoldingPyWindowHelper():
 		sps=sps[:i]
 		return sps.count(' ')+sps.count('\t')*self.view.get_tab_width()
 
-	def fold_off(self,widget,e=None):
-		if e.hardware_keycode==53 and self.keycode==64:
+	def fold_off(self,widget=None,e=None,force=False):
+		if force or (e.hardware_keycode==53 and self.keycode==64):
 			s,e=self.doc.get_bounds()
 			self.doc.remove_tag(self.fld,s,e)
 			self.doc.remove_tag(self.inv,s,e)
 			self.keycode=53
-			print "SimpleFolding plugin: remove all fold"
+			#print "SimpleFolding plugin: remove all fold"
 		else:
 			self.keycode=e.hardware_keycode
 
-	def fold(self, action):
-		a=self.doc.get_iter_at_mark(self.doc.get_insert())
+        def fold_all(self, action=None):
+            if self._fold_all:
+                line = 1
+                lines = self.doc.get_line_count()
+                while line <= lines:
+                    res = self.fold(a=self.doc.get_iter_at_line(line))
+                    if res is not None and res>line:
+                        line = res
+                    else:
+                        line = line+1
+            else:
+                self.fold_off(force=True)
+
+            self._fold_all = not self._fold_all
+
+	def fold(self, action=None, a=None):
+                if a is None:
+    		    a=self.doc.get_iter_at_mark(self.doc.get_insert())
+
 		if a.has_tag(self.fld):
 			try:
 				a.set_line_offset(0)
@@ -89,7 +113,7 @@ class FoldingPyWindowHelper():
 				a.forward_to_tag_toggle(self.inv)
 				b.forward_to_tag_toggle(self.inv)
 				self.doc.remove_tag(self.inv,a,b)
-				print "SimpleFolding plugin: remove one fold"
+				#print "SimpleFolding plugin: remove one fold"
 			except:
 				pass
 
@@ -103,7 +127,7 @@ class FoldingPyWindowHelper():
 			self.doc.remove_tag(self.fld,b,c)
 			self.doc.remove_tag(self.inv,b,c)
 			self.doc.apply_tag(self.inv,b,c)
-			print "SimpleFolding plugin: create fold by selection"
+			#print "SimpleFolding plugin: create fold by selection"
 
 		else:
 			s=a.copy()
@@ -113,6 +137,7 @@ class FoldingPyWindowHelper():
 			e.forward_line()
 			t=s.get_text(e)
 			if t.strip()!="":
+                                ne = None
 				main_indent = self.detect_sps(s.get_text(e))
 				ns=s.copy()
 				fin=ns.copy()
@@ -134,17 +159,20 @@ class FoldingPyWindowHelper():
 						fin.set_line(line)
 						fin.forward_line()
 					else:
-						fin=ne.copy()
-						fin.forward_to_end()
-						line=fin.get_line()
+                                                if ne is not None:
+        						fin=ne.copy()
+        						fin.forward_to_end()
+        						line=fin.get_line()
 						break
-				
+		
 				if s.get_line()<line:
 					self.doc.apply_tag(self.fld,s,e)
 					self.doc.remove_tag(self.fld,e,fin)
 					self.doc.remove_tag(self.inv,e,fin)
 					self.doc.apply_tag(self.inv,e,fin)
-					print "SimpleFolding plugin: create fold by indent"
+                                        return line
+					#print "SimpleFolding plugin: create fold by indent"
+                return None
 
 
 class FoldingPyPlugin(gedit.Plugin):
